@@ -1,4 +1,8 @@
 {
     "gameConfigName": "game.json",
-    "gamesDir": "M:/Games/PC"
+    "gamesDir": "M:/Games/PC",
+    "contentServerPort": 9494,
+    "chatServerPort": 6667,
+    "chatChannels": ["#lanlauncher"],
+    "chatUsername": "LANLauncher"
 }

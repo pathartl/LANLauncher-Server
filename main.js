@@ -1,12 +1,17 @@
 const fs = require('fs');
 const md5 = require('md5');
 const http = require('http');
-const PORT = 9494;
+const irc = require('irc');
+const ircs = require('ircs');
 
 const configPath = './config.json';
 const defaults = {
     'gameConfigName': 'game.json',
-    'gamesDir': './games'
+    'gamesDir': './games',
+    'contentServerPort': 9494,
+    'chatServerPort': 6667,
+    'chatChannels': ['#lanlauncher'],
+    'chatUsername': 'LANLauncher'
 }
 
 var config = {};
@@ -156,10 +161,41 @@ function handleRequest(request, response) {
 	}
 }
 
+function startContentServer() {
+	var server = http.createServer(handleRequest);
+
+	server.listen(config.contentServerPort, function() {
+		console.log('Content server started');
+	});
+}
+
+function startChatServer() {
+	ircs().listen(config.chatServerPort, function() {
+		console.log('Chat server started');
+
+		setTimeout(startChatClient, 1000);
+	});
+}
+
+function startChatClient() {
+	var client = new irc.Client('localhost', config.chatUsername, {
+		port: config.chatServerPort,
+		autoRejoin: true,
+		retryCount: 100,
+		autoConnect: true
+	});
+
+	client.addListener('registered', function (message) {
+    	setTimeout(function() {
+    		console.log('Joining channel(s)!')
+    		config.chatChannels.forEach(function(channel) {
+    			client.join(channel);
+    		});
+    	}, 500);
+	});
+
+}
+
 loadConfig();
-
-var server = http.createServer(handleRequest);
-
-server.listen(PORT, function() {
-	console.log('Web server started');
-});
+startContentServer();
+startChatServer();
