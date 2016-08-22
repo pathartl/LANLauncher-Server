@@ -1,0 +1,14 @@
+{
+  "name": "lanlauncher-server",
+  "version": "1.0.0",
+  "description": "The server for LANLauncher. Acts as a chat server and distribution server.",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "author": "Pat Hartl",
+  "license": "ISC",
+  "devDependencies": {
+    "md5": "^2.1.0"
+  }
+}
