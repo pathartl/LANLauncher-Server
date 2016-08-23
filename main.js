@@ -106,6 +106,8 @@ function getGameConfig(gameName) {
 }
 
 function getAvailableGameConfigs() {
+	gameList = new Array();
+	
 	getAvailableGameNames();
 
 	gameNames.forEach(function(gameName) {
