@@ -72,7 +72,7 @@ function getGameConfigPath(gameName) {
 function getAvailableGameNames() {
 	gameNames = new Array();
 
-	console.log(config.gamesDir);
+	//console.log(config.gamesDir);
 
     var directories = fs.readdirSync(config.gamesDir);
 
@@ -84,7 +84,7 @@ function getAvailableGameNames() {
             }
 
             catch (e) {
-                console.log('Not a valid game: ' + file);
+                //console.log('Not a valid game: ' + file);
             }
         }
     });
@@ -107,7 +107,7 @@ function getGameConfig(gameName) {
 
 function getAvailableGameConfigs() {
 	gameList = new Array();
-	
+
 	getAvailableGameNames();
 
 	gameNames.forEach(function(gameName) {
@@ -118,8 +118,11 @@ function getAvailableGameConfigs() {
 }
 
 function injectDownloadLocation(gameName, gameConfig) {
+	var gameNameHash = md5(gameName);
 	gameConfig.folderName = gameName;
-	gameConfig.contentFile = '/download/' + md5(gameName);
+	gameConfig.contentFile = '/download/' + gameNameHash;
+	gameConfig.coverFile = '/cover/' + gameNameHash;
+	gameConfig.remoteFile = true;
 
 	return gameConfig;
 }
@@ -137,29 +140,77 @@ function sendGameFiles(response, downloadPath) {
 
 	if (game !== false) {
 		var filePath = getGamePath(game.folderName) + '/game.zip';
-		var stat = fs.statSync(filePath);
 
-		response.writeHead(200, {
-			'Content-Type': 'application/zip',
-			'Content-Length': stat.size,
-			'Content-Disposition': 'attachment; filename="game.zip"'
-		});
+		try {
+			var stat = fs.statSync(filePath);
 
-		var readStream = fs.createReadStream(filePath);
-		readStream.pipe(response);
+			response.writeHead(200, {
+				'Content-Type': 'application/zip',
+				'Content-Length': stat.size,
+				'Content-Disposition': 'attachment; filename="game.zip"'
+			});
+
+			var readStream = fs.createReadStream(filePath);
+			readStream.pipe(response);
+		} catch(err) {
+			response.end('Game download file does not exist!');
+		}
 	} else {
 		response.end('Invalid download location.');
 	}
 }
 
+function sendGameCover(response, coverPath) {
+	var game = false;
+
+	gameList.forEach(function(gameConfig) {
+		if (gameConfig.coverFile == coverPath) {
+			game = gameConfig;
+		}
+	});
+
+	if (game !== false) {
+		var filePath = getGamePath(game.folderName) + '/cover.jpg';
+
+		try {
+			var cover = fs.readFileSync(filePath);
+
+			response.writeHead(200, {
+				'Content-Type': 'image/jpeg'
+			});
+
+			response.end(cover, 'binary');			
+		} catch(err) {
+			
+		}
+
+	} else {
+		response.end('Invalid cover location');
+	}
+}
+
 function handleRequest(request, response) {
-	if (request.url == '/games.json') {
+	var requestingManifest = request.url == '/games.json';
+	var requestingCover = request.url.indexOf('/cover/') === 0;
+	var requestingDownload = request.url.indexOf('/download/') === 0;
+
+	if (requestingManifest) {
+
 		getAvailableGameConfigs();
 		response.end(JSON.stringify(gameList));
-	} else if (request.url.indexOf('/download/' == 0)) {
+
+	} else if (requestingDownload) {
+
 		sendGameFiles(response, request.url);
+
+	} else if (requestingCover) {
+
+		sendGameCover(response, request.url);
+
 	} else {
+
 		response.end('Invalid request.');
+
 	}
 }
 
@@ -180,6 +231,8 @@ function startChatServer() {
 }
 
 function startChatClient() {
+	var joinedChannel = false;
+
 	var client = new irc.Client('localhost', config.chatUsername, {
 		port: config.chatServerPort,
 		autoRejoin: true,
@@ -189,11 +242,26 @@ function startChatClient() {
 
 	client.addListener('registered', function (message) {
     	setTimeout(function() {
-    		console.log('Joining channel(s)!')
-    		config.chatChannels.forEach(function(channel) {
-    			client.join(channel);
-    		});
+    		if (joinedChannel === false) {
+	    		console.log('Joining channel(s)!');
+	    		joinedChannel = true;
+	    		config.chatChannels.forEach(function(channel) {
+	    			client.join(channel);
+	    		});
+	    	}
     	}, 500);
+	});
+
+	client.addListener('message', function(nick, to, text) {
+		console.log(nick + ': ' + text);
+	});
+
+	// client.addListener('raw', function(message) {
+	// 	console.log(JSON.stringify(message));
+	// });
+
+	client.addListener('error', function(message) {
+	    console.log('error: ', message);
 	});
 
 }
