@@ -121,7 +121,15 @@ function injectDownloadLocation(gameName, gameConfig) {
 	var gameNameHash = md5(gameName);
 	gameConfig.folderName = gameName;
 	gameConfig.contentFile = '/download/' + gameNameHash;
-	gameConfig.coverFile = '/cover/' + gameNameHash;
+
+	try {
+		var coverPath = getGamePath(gameName) + '/cover.jpg';
+		var stat = fs.statSync(coverPath);
+		gameConfig.coverFile = '/cover/' + gameNameHash;
+	} catch(err) {
+		gameConfig.coverFile = false;
+	}
+	
 	gameConfig.remoteFile = true;
 
 	return gameConfig;
@@ -181,7 +189,8 @@ function sendGameCover(response, coverPath) {
 
 			response.end(cover, 'binary');			
 		} catch(err) {
-			
+			response.writeHead(404)
+			response.end('Cover not found');
 		}
 
 	} else {
