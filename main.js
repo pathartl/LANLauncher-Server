@@ -19,6 +19,8 @@ var config = {};
 var gameNames = new Array();
 var gameList = new Array();
 
+var Server = require('ircdjs/lib/server.js').Server;
+Server.boot();
 function loadConfig() {
 
     try {
@@ -277,4 +279,4 @@ function startChatClient() {
 
 loadConfig();
 startContentServer();
-startChatServer();
+//startChatServer();
