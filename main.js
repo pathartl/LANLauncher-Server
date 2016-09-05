@@ -3,6 +3,7 @@ const md5 = require('md5');
 const http = require('http');
 const irc = require('irc');
 const ircs = require('ircs');
+const _ = require('lodash');
 
 const configPath = './config.json';
 const defaults = {
@@ -107,22 +108,47 @@ function getGameConfig(gameName) {
     }
 }
 
+function verifyGameConfig(gameName) {
+    try {
+    	// Make sure we can open it for read
+        var fd = fs.openSync(getGameConfigPath(gameName), 'r+');
+        // Close!
+        fs.closeSync(fd);
+
+        var data = fs.readFileSync(getGameConfigPath(gameName), 'utf8');
+
+        var JSONTest = JSON.parse(data);
+        var JSONTest = JSON.stringify(JSONTest);
+
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
 function getAvailableGameConfigs() {
 	gameList = new Array();
 
 	getAvailableGameNames();
 
 	gameNames.forEach(function(gameName) {
-		var gameConfig = getGameConfig(gameName);
-		gameConfig = injectDownloadLocation(gameName, gameConfig);
-		gameList.push(gameConfig);
+		if (verifyGameConfig(gameName)) {
+			var gameConfig = getGameConfig(gameName);
+			gameConfig = injectDownloadLocation(gameName, gameConfig);
+			gameList.push(gameConfig);
+		}
 	});
 }
 
 function injectDownloadLocation(gameName, gameConfig) {
 	var gameNameHash = md5(gameName);
-	gameConfig.folderName = gameName;
-	gameConfig.contentFile = '/download/' + gameNameHash;
+
+	try {
+		gameConfig.folderName = gameName;
+		gameConfig.contentFile = '/download/' + gameNameHash;
+	} catch(err) {
+		console.log('Error with game ' + gameName);
+	}
 
 	try {
 		var coverPath = getGamePath(gameName) + '/cover.jpg';
