@@ -20,8 +20,8 @@ var config = {};
 var gameNames = new Array();
 var gameList = new Array();
 
-var Server = require('ircdjs/lib/server.js').Server;
-Server.boot();
+var Chat, ChatServer, ChatService;
+
 function loadConfig() {
 
     try {
@@ -230,6 +230,7 @@ function handleRequest(request, response) {
 	var requestingManifest = request.url == '/games.json';
 	var requestingCover = request.url.indexOf('/cover/') === 0;
 	var requestingDownload = request.url.indexOf('/download/') === 0;
+	var requestingUserList = request.url == '/users.json';
 
 	if (requestingManifest) {
 
@@ -243,6 +244,10 @@ function handleRequest(request, response) {
 	} else if (requestingCover) {
 
 		sendGameCover(response, request.url);
+
+	} else if (requestingUserList) {
+
+		response.end(JSON.stringify(Chat.getUsers()));
 
 	} else {
 
@@ -260,49 +265,20 @@ function startContentServer() {
 }
 
 function startChatServer() {
-	ircs().listen(config.chatServerPort, function() {
-		console.log('Chat server started');
 
-		setTimeout(startChatClient, 1000);
-	});
 }
 
 function startChatClient() {
-	var joinedChannel = false;
-
-	var client = new irc.Client('localhost', config.chatUsername, {
-		port: config.chatServerPort,
-		autoRejoin: true,
-		retryCount: 100,
-		autoConnect: true
-	});
-
-	client.addListener('registered', function (message) {
-    	setTimeout(function() {
-    		if (joinedChannel === false) {
-	    		console.log('Joining channel(s)!');
-	    		joinedChannel = true;
-	    		config.chatChannels.forEach(function(channel) {
-	    			client.join(channel);
-	    		});
-	    	}
-    	}, 500);
-	});
-
-	client.addListener('message', function(nick, to, text) {
-		console.log(nick + ': ' + text);
-	});
-
-	// client.addListener('raw', function(message) {
-	// 	console.log(JSON.stringify(message));
-	// });
-
-	client.addListener('error', function(message) {
-	    console.log('error: ', message);
-	});
 
 }
 
 loadConfig();
 startContentServer();
-//startChatServer();
+// startChatServer();
+// startChatClient();
+
+// ChatServer = require('ircdjs/lib/server.js').Server;
+// ChatServer.boot();
+
+// ChatService = require('./services/chat-client.js');
+// Chat = new ChatService();
