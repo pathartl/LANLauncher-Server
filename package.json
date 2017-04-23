@@ -8,12 +8,7 @@
   },
   "author": "Pat Hartl",
   "license": "ISC",
-  "devDependencies": {
-    "irc": "^0.5.0",
-    "ircs": "^0.3.0"
-  },
   "dependencies": {
-    "ircdjs": "0.0.17",
     "lodash": "^4.15.0",
     "md5": "^2.1.0"
   }

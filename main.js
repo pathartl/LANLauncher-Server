@@ -1,8 +1,8 @@
 const fs = require('fs');
 const md5 = require('md5');
 const http = require('http');
-const irc = require('irc');
-const ircs = require('ircs');
+// const irc = require('irc');
+// const ircs = require('ircs');
 const _ = require('lodash');
 
 const configPath = './config.json';
